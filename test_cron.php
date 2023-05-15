@@ -19,49 +19,53 @@ $b = $a->fetchAll(PDO::FETCH_ASSOC);
 
 
 
-
-
-foreach ($b as $user){
+foreach ($b as $user)
+{
     $current = time();
 
-    if(!empty($user['remindTime'])){
-        if ($current >= $user['remindTime']){
+    if(
+        !empty($user['remindTime']) 
+        && 
+        $current >= $user['remindTime'])
+    {
+        $bot = new Telegram ($user['chatId'],'');
 
+        $weather = 'Weather: ' . Weather::getWeather($user['city_id'])['weather'][0]['main'];
+        $bot->sendMessage($weather);
 
-            $bot = new Telegram ($user['chatId'],'');
-
-
-            $weather = 'Weather: ' . Weather::getWeather($user['city_id'])['weather'][0]['main'];
-            $bot->sendSimpleMsg($user['chatId'], $weather);
-
-            $temperature = 'Temperature: ' . Weather::getWeather($user['city_id'])['main']['temp'] . '^C';
-            $bot->sendSimpleMsg($user['chatId'], $temperature);
+        $temperature = 'Temperature: ' . Weather::getWeather($user['city_id'])['main']['temp'] . '^C';
+        $bot->sendMessage($temperature);
             
-            $querySetNull = 'UPDATE users SET remindTime = :remindTime WHERE chatId = :chat_id';
-            $null = 0;
-            $stmt = $pdo->prepare($querySetNull);
-            $stmt->execute([':remindTime'=>$null, ':chat_id'=>$user['chatId']]);
+        $querySetNull = 'UPDATE users SET remindTime = :remindTime WHERE chatId = :chat_id';
+        $null = 0;
+        $stmt = $pdo->prepare($querySetNull);
+        $stmt->execute([':remindTime'=>$null, ':chat_id'=>$user['chatId']]);
 
-        }
     }
 
-    if(isset($user['intervalTimeStamp']) && isset($user['intervalTime']) && !empty($user['intervalQuantity'])){
-        if($current >= $user['intervalTimeStamp'] + $user['intervalTime']){
+    if(
+        isset($user['intervalTimeStamp']) 
+        && 
+        isset($user['intervalTime']) 
+        && 
+        !empty($user['intervalQuantity'])
+        &&
+        ($current >= $user['intervalTimeStamp'] + $user['intervalTime']))
+    {
 
-            $bot = new Telegram ($user['chatId'],'');
+        $bot = new Telegram ($user['chatId'],'');
 
-            $weather = 'Weather: ' . Weather::getWeather($user['city_id'])['weather'][0]['main'];
-            $bot->sendSimpleMsg($user['chatId'], $weather);
+        $weather = 'Weather: ' . Weather::getWeather($user['city_id'])['weather'][0]['main'];
+        $bot->sendMessage($weather);
 
-            $temperature = 'Temperature: ' . Weather::getWeather($user['city_id'])['main']['temp'] . '^C';
-            $bot->sendSimpleMsg($user['chatId'], $temperature);
+        $temperature = 'Temperature: ' . Weather::getWeather($user['city_id'])['main']['temp'] . '^C';
+        $bot->sendMessage($temperature);
 
-            $newCount = $user['intervalQuantity'] - 1;
+        $newCount = $user['intervalQuantity'] - 1;
 
-            $queryDecreaseCounter = "UPDATE users SET intervalQuantity = :intervalQuantity WHERE chatId = :chat_id";
-            $stmt = $pdo->prepare($queryDecreaseCounter);
-            $stmt->execute([':intervalQuantity'=>$newCount, ':chat_id'=>$user['chatId']]);
-        }
+        $queryDecreaseCounter = "UPDATE users SET intervalQuantity = :intervalQuantity WHERE chatId = :chat_id";
+        $stmt = $pdo->prepare($queryDecreaseCounter);
+        $stmt->execute([':intervalQuantity'=>$newCount, ':chat_id'=>$user['chatId']]);
     }
 }
 
